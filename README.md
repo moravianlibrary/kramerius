@@ -1,5 +1,7 @@
 ###Novinky
 
+[![Join the chat at https://gitter.im/moravianlibrary/kramerius](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/moravianlibrary/kramerius?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Aktuální distribuční verze je k dispozici v sekci Releases na projektovém serveru GitHub ( https://github.com/ceskaexpedice/kramerius/releases/latest )
 
 (pro napojení na vývojové práce ČDK je vyžadována verze 4.8 a vyšší),
