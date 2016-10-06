@@ -112,7 +112,7 @@ public class InfoResource {
                 String pid = "uuid:0dedb9a0-7fcf-11e6-bb23-005056827e51";
                 if (isActionAllowed.isActionAllowed(SecuredActions.SHOW_ALTERNATIVE_INFO_TEXT.getFormalName(), pid, null, solrAccess.getPath(pid)[0])
                         && textService.isAvailable(RIGHT_MSG_ALTERNATIVE,provider.get())) {
-                    rightsMsg = resourceBundleService.getResourceBundle("labels", provider.get()).getString(RIGHT_MSG_ALTERNATIVE);
+                    rightsMsg = textService.getText(RIGHT_MSG_ALTERNATIVE, provider.get());
 
                 }
 
