@@ -33,13 +33,14 @@ import cz.incad.kramerius.utils.XMLUtils;
 import cz.incad.kramerius.utils.conf.KConfiguration;
 import cz.incad.kramerius.utils.solr.SolrUtils;
 
+
 public class MigrateSolrIndexImpl implements MigrateSolrIndex{
 
     private static final String DEST_SOLR_HOST = ".dest.solrHost";
     public static final String QEURY_POSTFIX = "select?q=*:*";
     public static final int ROWS = 500;
-    public static final int START = 0;
-    
+    public static final int START = 15649000; //zmena
+
     public static final Logger LOGGER = Logger.getLogger(MigrateSolrIndexImpl.class.getName());
     
     private Client client;
@@ -115,32 +116,38 @@ public class MigrateSolrIndexImpl implements MigrateSolrIndex{
     }
     
     private void sendToDest(Element edoc)  throws MigrateSolrIndexException {
+        String errorUuid = "";
         try {
             StringWriter writer = new StringWriter();
             String destSolr = destinationServer();
             WebResource r = this.client.resource(destSolr);
-            
+
             Document ndoc = XMLUtils.crateDocument("add");
 
             Element docElem = ndoc.createElement("doc");
             ndoc.getDocumentElement().appendChild(docElem);
-            
+
             NodeList childNodes = edoc.getChildNodes();
-            for (int i = 0,ll=childNodes.getLength(); i < ll; i++) {
+            for (int i = 0, ll = childNodes.getLength(); i < ll; i++) {
                 Node node = childNodes.item(i);
                 if (node.getNodeType() == Node.ELEMENT_NODE) {
-                    List<String> primitiveVals = Arrays.asList("str","int","bool","date");
+                    List<String> primitiveVals = Arrays.asList("str", "int", "bool", "date");
                     if (primitiveVals.contains(node.getNodeName())) {
-                        simpleValue(ndoc,docElem, node,null);
+                        simpleValue(ndoc, docElem, node, null);
                     } else {
-                        arrayValue(ndoc,docElem,node);
+                        arrayValue(ndoc, docElem, node);
                     }
+                    if(node.getAttributes().getNamedItem("name").equals("PID"))    //
+                    {                                                       //
+                        errorUuid=node.getNodeValue();                      //
+                    }                                                       //
                 }
             }
             XMLUtils.print(ndoc, writer);
             ClientResponse resp = r.accept(MediaType.TEXT_XML).type(MediaType.TEXT_XML).entity(writer.toString(), MediaType.TEXT_XML).post(ClientResponse.class);
             if (resp.getStatus() != ClientResponse.Status.OK.getStatusCode()) {
-                throw new MigrateSolrIndexException("Exiting with staus:"+resp.getStatus());
+                //throw new MigrateSolrIndexException("Exiting with staus:"+resp.getStatus()); //zmena
+                LOGGER.severe("Error at: "+errorUuid);
             }
         } catch (UniformInterfaceException e) {
             throw new MigrateSolrIndexException(e);
