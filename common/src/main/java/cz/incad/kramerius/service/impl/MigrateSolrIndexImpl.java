@@ -59,7 +59,7 @@ public class MigrateSolrIndexImpl implements MigrateSolrIndex{
             LOGGER.info(String.format("\t destination index :%s", destinationServer()));
             solrQuery += (solrQuery.endsWith("/") ? "" : "/")+ QEURY_POSTFIX;
             int max = Integer.MAX_VALUE;
-            int cursor = 0;
+            int cursor = START;
             while(cursor < max) {
                 max = processSource(solrQuery, cursor);
                 if (max != Integer.MAX_VALUE) {
