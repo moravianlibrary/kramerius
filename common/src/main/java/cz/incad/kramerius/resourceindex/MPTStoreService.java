@@ -202,7 +202,7 @@ public class MPTStoreService implements IResourceIndex {
             String sql = "select " + table_dcTitle + ".s, " + table_dcTitle + ".o, " + table_lastModifiedDate + ".o from ";
             sql += table_dcTitle + "," + table_lastModifiedDate + "," + table_model;
             sql += " where " + table_model + ".o='<info:fedora/fedora-system:ContentModel-3.0>' and " + table_dcTitle + ".s=" + table_lastModifiedDate + ".s and " + table_dcTitle + ".s=" + table_model + ".s "
-                    + " order by " + table_dcTitle + ".o limit 1000";
+                    + " order by " + table_dcTitle + ".o ";
 
             s = c.prepareStatement(sql,
                     ResultSet.FETCH_FORWARD,
@@ -293,7 +293,7 @@ public class MPTStoreService implements IResourceIndex {
                 String sql = "select " + table_dcTitle + ".s, " + table_dcTitle + ".o, " + table_dcType + ".o from "
                         + table_dcTitle + "," + table_dcType + "," + table_model;
 
-                sql += " where " + table_model + ".o='<info:fedora/model:collection>' and " + table_dcTitle + ".s=" + table_dcType + ".s and " + table_dcTitle + ".s=" + table_model + ".s ";
+                sql += " where " + table_model + ".o='<info:fedora/model:collection>' and " + table_dcTitle + ".s=" + table_dcType + ".s and " + table_dcTitle + ".s=" + table_model + ".s limit 1000";
 
                 s = c.prepareStatement(sql,
                         ResultSet.FETCH_FORWARD,
