@@ -27,6 +27,7 @@ import cz.incad.kramerius.service.impl.PolicyServiceImpl;
 import cz.incad.kramerius.utils.StringUtils;
 import cz.incad.kramerius.utils.XMLUtils;
 import cz.incad.kramerius.utils.conf.KConfiguration;
+import cz.incad.kramerius.ObjectPidsPath;
 
 /**
  * Apply MW Utility
@@ -141,7 +142,24 @@ public class ApplyMWUtils {
         ApplyMovingWall.LOGGER.info("Setting public | private flag for pid " + masterPid);
         ApplyMWUtils.process(fa, sa, masterPid, userValue, coll);
         Set<String> pids = fa.getPids(masterPid);
-        for (String onePid : pids) {
+        String[] root;
+        try {
+            ObjectPidsPath[] path = sa.getPath(masterPid);
+            root = path[path.length-1].getPathFromRootToLeaf();
+        } catch (NullPointerException e){
+            root = new String[1];
+            root[0] = masterPid;
+        }
+        try {
+            if("policy:private".equals(disectFlagFromRELSEXT(root[0],fa))){
+                for (int i = 0; i < root.length; i++) {
+                    pids.add(root[i]);
+                }
+            }
+        } catch(Exception e){
+            ApplyMovingWall.LOGGER.warning("Error while retrieving policy of objects in path to root.");
+        }
+	for (String onePid : pids) {
             ApplyMWUtils.process(fa, sa, onePid, userValue, coll);
         }
     }
