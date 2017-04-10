@@ -11,6 +11,7 @@ import cz.incad.kramerius.rest.api.k5.client.item.utils.ItemResourceUtils;
 import cz.incad.kramerius.rest.api.k5.client.utils.PIDSupport;
 import cz.incad.kramerius.utils.ApplicationURL;
 import de.digitalcollections.iiif.presentation.model.api.v2.Canvas;
+import de.digitalcollections.iiif.presentation.model.api.v2.Collection;
 import de.digitalcollections.iiif.presentation.model.api.v2.IiifResource;
 import de.digitalcollections.iiif.presentation.model.api.v2.Image;
 import de.digitalcollections.iiif.presentation.model.api.v2.ImageResource;
@@ -18,14 +19,17 @@ import de.digitalcollections.iiif.presentation.model.api.v2.Manifest;
 import de.digitalcollections.iiif.presentation.model.api.v2.PropertyValue;
 import de.digitalcollections.iiif.presentation.model.api.v2.Sequence;
 import de.digitalcollections.iiif.presentation.model.api.v2.Service;
+import de.digitalcollections.iiif.presentation.model.api.v2.references.ManifestReference;
 import de.digitalcollections.iiif.presentation.model.impl.jackson.v2.IiifPresentationApiObjectMapper;
 import de.digitalcollections.iiif.presentation.model.impl.v2.CanvasImpl;
+import de.digitalcollections.iiif.presentation.model.impl.v2.CollectionImpl;
 import de.digitalcollections.iiif.presentation.model.impl.v2.ImageImpl;
 import de.digitalcollections.iiif.presentation.model.impl.v2.ImageResourceImpl;
 import de.digitalcollections.iiif.presentation.model.impl.v2.ManifestImpl;
 import de.digitalcollections.iiif.presentation.model.impl.v2.PropertyValueSimpleImpl;
 import de.digitalcollections.iiif.presentation.model.impl.v2.SequenceImpl;
 import de.digitalcollections.iiif.presentation.model.impl.v2.ServiceImpl;
+import de.digitalcollections.iiif.presentation.model.impl.v2.references.ManifestReferenceImpl;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpResponse;
@@ -168,6 +172,47 @@ public class IiifAPI {
         } catch (URISyntaxException e) {
             throw new GenericApplicationException(e.getMessage());
         } catch (InterruptedException e) {
+            throw new GenericApplicationException(e.getMessage());
+        }
+    }
+
+    @GET
+    @Path("{pid}/collection")
+    @Produces({MediaType.APPLICATION_JSON + ";charset=utf-8"})
+    public Response collection(@PathParam("pid") String pid) {
+        checkPid(pid);
+        try {
+            DocumentDto document = getIiifDocument(pid);
+            PropertyValue titleLabel = new PropertyValueSimpleImpl(document.getTitle());
+            Collection collection = new CollectionImpl(UriBuilder.fromUri(iiifUri).path(getClass(), "collection").build(pid), titleLabel, null);
+            List<ManifestReference> manifestReferenceList = new ArrayList<ManifestReference>();
+
+            List<String> fieldList = new ArrayList<String>();
+            List<String> volumes = ItemResourceUtils.solrChildrenPids(document.getPid(), fieldList, solrAccess, solrMemoization);
+
+            for (String volumePid : volumes) {
+                volumePid = volumePid.replace("/", "");
+
+                DocumentDto volume = getIiifDocument(volumePid);
+                if (!"periodicalvolume".equals(volume.getModel())) continue;
+
+                List<String> fieldIssuesList = new ArrayList<String>();
+                List<String> issues = ItemResourceUtils.solrChildrenPids(volume.getPid(), fieldIssuesList, solrAccess, solrMemoization);
+
+                for (String issuePid : issues) {
+                    issuePid = issuePid.replace("/", "");
+
+                    DocumentDto issue = getIiifDocument(issuePid);
+                    if (!"periodicalitem".equals(issue.getModel())) continue;
+                    ManifestReference manifest = new ManifestReferenceImpl(UriBuilder.fromUri(iiifUri).path(getClass(), "manifest").build(issuePid));
+                    manifestReferenceList.add(manifest);
+                }
+            }
+            collection.setManifests(manifestReferenceList);
+
+            return Response.ok().entity(toJSON(collection)).build();
+
+        } catch (IOException e) {
             throw new GenericApplicationException(e.getMessage());
         }
     }
