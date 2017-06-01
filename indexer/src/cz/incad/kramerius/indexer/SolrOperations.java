@@ -621,6 +621,10 @@ public class SolrOperations {
         HttpURLConnection urlc = null;
         String POST_ENCODING = "UTF-8";
         try {
+            //in case of unrecognized char, change & so that solr can recognize it
+            if(data.contains("&#")){
+                data = data.replaceAll("&#","&amp;#");
+            }
             urlc = (HttpURLConnection) solrUrl.openConnection();
             urlc.setConnectTimeout(config.getInt("http.timeout", 10000));
             try {
