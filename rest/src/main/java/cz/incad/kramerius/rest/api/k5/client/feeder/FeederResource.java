@@ -178,7 +178,7 @@ public class FeederResource {
                         try {
                             String uriString = UriBuilder
                                     .fromResource(FeederResource.class)
-                                    .path("custom").build(pid).toString();
+                                    .path("newest").build(pid).toString();
                             JSONObject mdis = JSONUtils.pidAndModelDesc(pid.toString(), 
                                     uriString, this.solrMemo, this.decoratorsAggregate, uriString);
 
