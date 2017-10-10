@@ -96,7 +96,7 @@ public class OaiServlet extends GuiceServlet {
         inFactory = XMLInputFactory.newInstance();
     }
 
-    @Override
+   @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String pid = req.getParameter(IKeys.PID_PARAMETER);
         Format format = resolveFormatParameter(req);
@@ -109,15 +109,30 @@ public class OaiServlet extends GuiceServlet {
         try {
             sendResponse(oaiWriter, resp);
         } catch (IOException ex) {
-            LOG.log(Level.SEVERE, pid, ex);
+            LOG.log(Level.WARNING, pid + " doesn't exist in Fedora.");
             if (!resp.isCommitted()) {
                 resp.reset();
-                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                sendFakeContent(resp);
             }
         } finally {
             oaiWriter.close();
         }
 
+    }
+    
+    private void sendFakeContent(HttpServletResponse resp) {
+        String emptyXml = "<error code=\"404\">";
+        resp.setContentType("text/xml");
+        resp.setCharacterEncoding("UTF-8");
+        resp.setContentLength(emptyXml.length());
+
+        try {
+            resp.getWriter().write(emptyXml);
+            resp.getWriter().flush();
+            resp.getWriter().close();
+        } catch (IOException ex) {
+            LOG.log(Level.SEVERE, "response writer", ex);
+        }
     }
 
     private static Format resolveFormatParameter(HttpServletRequest req) {
