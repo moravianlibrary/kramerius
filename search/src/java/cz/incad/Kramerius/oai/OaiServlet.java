@@ -129,15 +129,10 @@ public class OaiServlet extends GuiceServlet {
         resp.setContentType("text/xml");
         resp.setCharacterEncoding("UTF-8");
         resp.setContentLength(errMessage.length());
-        
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();  
-        DocumentBuilder builder;
   
         try (PrintWriter respWriter = resp.getWriter()) {
             String errMsg = "<?xml version=\"1.0\" encoding=\"utf-8\"?><error>" + errMessage + "</error>";
-            builder = factory.newDocumentBuilder();
-            Document document = builder.parse(new InputSource(new StringReader(errMsg)));
-            respWriter.write(document);
+            respWriter.write(errMsg);
             respWriter.flush();
         } catch (IOException ex) {
             LOG.log(Level.SEVERE, "response writer", ex);
@@ -176,6 +171,9 @@ public class OaiServlet extends GuiceServlet {
 
     private void sendResponse(OaiWriter oaiWriter, HttpServletResponse resp) throws IOException {
         InputStream fileReader = oaiWriter.getContent();
+        System.out.println("---");
+        System.out.println(fileReader.toString());
+        System.out.println("---");
         resp.setContentType("text/xml");
         resp.setContentLength((int) oaiWriter.getContentLength());
         resp.setCharacterEncoding("UTF-8");
