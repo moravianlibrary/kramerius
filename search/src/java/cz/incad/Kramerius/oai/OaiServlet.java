@@ -127,7 +127,9 @@ public class OaiServlet extends GuiceServlet {
         resp.setContentLength(errMessage.length());
   
         try (PrintWriter respWriter = resp.getWriter()) {
-            respWriter.write("<error>" + errMessage + "</error>");
+            String errMsg = "<error>" + errMessage + "</error>";
+            System.out.println(errMsg);
+            respWriter.write(errMsg);
             respWriter.flush();
         } catch (IOException ex) {
             LOG.log(Level.SEVERE, "response writer", ex);
