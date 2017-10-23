@@ -167,9 +167,6 @@ public class OaiServlet extends GuiceServlet {
 
     private void sendResponse(OaiWriter oaiWriter, HttpServletResponse resp) throws IOException {
         InputStream fileReader = oaiWriter.getContent();
-        System.out.println("---");
-        System.out.println(fileReader.toString());
-        System.out.println("---");
         resp.setContentType("text/xml");
         resp.setContentLength((int) oaiWriter.getContentLength());
         resp.setCharacterEncoding("UTF-8");
@@ -179,6 +176,9 @@ public class OaiServlet extends GuiceServlet {
         try {
             int length;
             while ((length = fileReader.read(buffer)) > 0) {
+                System.out.println("----");
+                System.out.println(buffer);
+                System.out.println("----");
                 responseWriter.write(buffer, 0, length);
             }
             responseWriter.flush();
