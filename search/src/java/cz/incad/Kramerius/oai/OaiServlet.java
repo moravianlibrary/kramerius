@@ -127,7 +127,7 @@ public class OaiServlet extends GuiceServlet {
         resp.setContentLength(errMessage.length());
   
         try (PrintWriter respWriter = resp.getWriter()) {
-            String errMsg = "<error>" + errMessage + "</error>";
+            String errMsg = "<?xml version=\"1.0\" encoding=\"utf-8\"?><error>" + errMessage + "</error>";
             System.out.println(errMsg);
             respWriter.write(errMsg);
             respWriter.flush();
