@@ -125,11 +125,15 @@ public class OaiServlet extends GuiceServlet {
         resp.setContentType("text/xml");
         resp.setCharacterEncoding("UTF-8");
         resp.setContentLength(errMessage.length());
+        
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();  
+        DocumentBuilder builder;
   
         try (PrintWriter respWriter = resp.getWriter()) {
             String errMsg = "<?xml version=\"1.0\" encoding=\"utf-8\"?><error>" + errMessage + "</error>";
-            System.out.println(errMsg);
-            respWriter.write(errMsg);
+            builder = factory.newDocumentBuilder();
+            Document document = builder.parse(new InputSource(new StringReader(errMsg)));
+            respWriter.write(document);
             respWriter.flush();
         } catch (IOException ex) {
             LOG.log(Level.SEVERE, "response writer", ex);
