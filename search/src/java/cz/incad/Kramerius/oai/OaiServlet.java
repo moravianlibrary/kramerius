@@ -49,6 +49,7 @@ import javax.xml.stream.XMLEventFactory;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.events.XMLEvent;
+import org.w3c.dom.Document;
 
 /**
  * The servlet is intended to provide content to OAI server implementation.
