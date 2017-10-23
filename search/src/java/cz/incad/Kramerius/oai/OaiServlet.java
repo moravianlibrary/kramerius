@@ -17,6 +17,7 @@
 
 package cz.incad.Kramerius.oai;
 
+import java.nio.charset.StandardCharsets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import cz.incad.Kramerius.backend.guice.GuiceServlet;
@@ -177,7 +178,7 @@ public class OaiServlet extends GuiceServlet {
             int length;
             while ((length = fileReader.read(buffer)) > 0) {
                 System.out.println("----");
-                System.out.println(buffer);
+                System.out.println(new String(buffer, StandardCharsets.UTF_8));
                 System.out.println("----");
                 responseWriter.write(buffer, 0, length);
             }
