@@ -128,7 +128,7 @@ public class OaiServlet extends GuiceServlet {
         resp.setContentLength(errMessage.length());
   
         try (PrintWriter respWriter = resp.getWriter()) {
-            String errMsg = "<?xml version='1.0' encoding='UTF-8'?><error>" + errMessage + "<error>";
+            String errMsg = "<?xml version='1.0' encoding='UTF-8'?><dr:record xmlns:dr=\"http://registrdigitalizace.cz/schemas/drkramerius/v4\" root=\"true\"><dr:uuid></dr:uuid><dr:type></dr:type><dr:descriptor><mods:modsCollection xmlns:mods=\"http://www.loc.gov/mods/v3\"><error>" + errMessage + "</error></mods:modsCollection></dr:descriptor></dr:record>";
             respWriter.write(errMsg);
             respWriter.flush();
         } catch (IOException ex) {
