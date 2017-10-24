@@ -123,13 +123,13 @@ public class OaiServlet extends GuiceServlet {
     }
     
     private void sendErrorMessage(HttpServletResponse resp, String errMessage) {
+        errMessage = "<error>" + errMessage + "</error>";
         resp.setContentType("text/xml");
         resp.setCharacterEncoding("UTF-8");
         resp.setContentLength(errMessage.length());
   
         try (PrintWriter respWriter = resp.getWriter()) {
-            String errMsg = "<?xml version='1.0' encoding='UTF-8'?><dr:record xmlns:dr=\"http://registrdigitalizace.cz/schemas/drkramerius/v4\" root=\"true\"><dr:uuid></dr:uuid><dr:type></dr:type><dr:descriptor><mods:modsCollection xmlns:mods=\"http://www.loc.gov/mods/v3\"><error>" + errMessage + "</error></mods:modsCollection></dr:descriptor></dr:record>";
-            respWriter.write(errMsg);
+            respWriter.write(errMessage);
             respWriter.flush();
         } catch (IOException ex) {
             LOG.log(Level.SEVERE, "response writer", ex);
