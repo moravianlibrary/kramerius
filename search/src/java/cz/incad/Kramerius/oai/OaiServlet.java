@@ -17,7 +17,6 @@
 
 package cz.incad.Kramerius.oai;
 
-import java.nio.charset.StandardCharsets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import cz.incad.Kramerius.backend.guice.GuiceServlet;
