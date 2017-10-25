@@ -31,6 +31,7 @@ import cz.incad.utils.IKeys;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -121,6 +122,7 @@ public class OaiServlet extends GuiceServlet {
     }
     
     private void sendErrorMessage(HttpServletResponse resp, String errMessage) {
+        errMessage = "<error>" + errMessage + "</error>";
         resp.setContentType("text/xml");
         resp.setCharacterEncoding("UTF-8");
         resp.setContentLength(errMessage.length());
