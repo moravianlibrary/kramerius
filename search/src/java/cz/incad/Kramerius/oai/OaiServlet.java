@@ -109,15 +109,29 @@ public class OaiServlet extends GuiceServlet {
         try {
             sendResponse(oaiWriter, resp);
         } catch (IOException ex) {
-            LOG.log(Level.SEVERE, pid, ex);
+            LOG.log(Level.WARNING, pid + " doesn't exist in Fedora.");
             if (!resp.isCommitted()) {
                 resp.reset();
-                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                sendErrorMessage(resp, ex.getMessage());
             }
         } finally {
             oaiWriter.close();
         }
 
+    }
+    
+    private void sendErrorMessage(HttpServletResponse resp, String errMessage) {
+        errMessage = "<error>" + errMessage + "</error>";
+        resp.setContentType("text/xml");
+        resp.setCharacterEncoding("UTF-8");
+        resp.setContentLength(errMessage.length());
+
+        try (PrintWriter respWriter = resp.getWriter()) {
+            respWriter.write(errMessage);
+            respWriter.flush();
+        } catch (IOException ex) {
+            LOG.log(Level.SEVERE, "response writer", ex);
+        }
     }
 
     private static Format resolveFormatParameter(HttpServletRequest req) {
