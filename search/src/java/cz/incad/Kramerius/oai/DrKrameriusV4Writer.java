@@ -22,6 +22,8 @@ import cz.incad.kramerius.KrameriusModels;
 import cz.incad.kramerius.relation.Relation;
 import cz.incad.kramerius.relation.RelationModel;
 import cz.incad.kramerius.relation.RelationService;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -42,6 +44,9 @@ import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.Namespace;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Generator of content intended for Digitization Registry CZ in Kramerius 4 format.
@@ -56,6 +61,7 @@ public class DrKrameriusV4Writer implements OaiWriter {
     private static final QName RECORD_QNAME = new QName(DR_NS_URI, "record", DR_NS_PREFIX);
     private static final QName UUID_QNAME = new QName(DR_NS_URI, "uuid", DR_NS_PREFIX);
     private static final QName TYPE_QNAME = new QName(DR_NS_URI, "type", DR_NS_PREFIX);
+    private static final QName POLICY_QNAME = new QName(DR_NS_URI, "policy", DR_NS_PREFIX);
     private static final QName RELATION_QNAME = new QName(DR_NS_URI, "relation", DR_NS_PREFIX);
     private static final QName DESCRIPTOR_QNAME = new QName(DR_NS_URI, "descriptor", DR_NS_PREFIX);
 
@@ -154,6 +160,11 @@ public class DrKrameriusV4Writer implements OaiWriter {
         writer.add(eventFactory.createStartElement(DESCRIPTOR_QNAME, null, null));
         generateBiblio(ctx);
         writer.add(eventFactory.createEndElement(DESCRIPTOR_QNAME, null));
+        
+        // <policy>
+        writer.add(eventFactory.createStartElement(POLICY_QNAME, null, null));
+        writer.add(eventFactory.createCharacters(getDCPolicy(ctx.getPid())));
+        writer.add(eventFactory.createEndElement(POLICY_QNAME, null));
 
         // <relation>*
         List<Relation> relations = OaiServlet.getRelations(ctx.getModel());
@@ -165,6 +176,27 @@ public class DrKrameriusV4Writer implements OaiWriter {
         }
 
         writer.add(eventFactory.createEndElement(RECORD_QNAME, null));
+    }
+    
+    private String getDCPolicy(String pid) throws IOException {
+        InputStream datastream = fedora.getDataStream(pid, "DC");
+        Document document = getXmlFromInputStream(datastream);
+        String rights = document.getElementsByTagName("dc:rights").item(0).getTextContent();
+        return rights;
+    }
+
+    private Document getXmlFromInputStream(InputStream datastream) {
+        DocumentBuilderFactory factory;
+        DocumentBuilder builder;
+        Document ret = null;
+        try {
+            factory = DocumentBuilderFactory.newInstance();
+            builder = factory.newDocumentBuilder();
+            ret = builder.parse(datastream);
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            e.printStackTrace();
+        }
+        return ret;
     }
 
     private void generate(Context ctx) throws XMLStreamException, IOException {
