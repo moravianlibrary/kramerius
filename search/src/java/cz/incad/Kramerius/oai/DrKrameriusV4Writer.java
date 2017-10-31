@@ -156,16 +156,16 @@ public class DrKrameriusV4Writer implements OaiWriter {
         writer.add(eventFactory.createCharacters(ctx.getModel().getKind().toString()));
         writer.add(eventFactory.createEndElement(TYPE_QNAME, null));
 
-        // <descriptor>
-        writer.add(eventFactory.createStartElement(DESCRIPTOR_QNAME, null, null));
-        generateBiblio(ctx);
-        writer.add(eventFactory.createEndElement(DESCRIPTOR_QNAME, null));
-        
         // <policy>
         writer.add(eventFactory.createStartElement(POLICY_QNAME, null, null));
         writer.add(eventFactory.createCharacters(getDCPolicy(ctx.getPid())));
         writer.add(eventFactory.createEndElement(POLICY_QNAME, null));
 
+        // <descriptor>
+        writer.add(eventFactory.createStartElement(DESCRIPTOR_QNAME, null, null));
+        generateBiblio(ctx);
+        writer.add(eventFactory.createEndElement(DESCRIPTOR_QNAME, null));
+        
         // <relation>*
         List<Relation> relations = OaiServlet.getRelations(ctx.getModel());
         for (Relation relation : relations) {
