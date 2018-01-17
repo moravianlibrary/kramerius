@@ -87,6 +87,8 @@ public class K4LoginModule implements LoginModule {
                 this.logged = checkPswd(foundUser.getLoginname(), foundPswd, pswd);
             } else {
                 this.logged = false;
+            }
+            if (!this.logged) {
                 LOGGER.info("Login failed for user \"" + loginName + "\": invalid username or password!");
                 throw new FailedLoginException("Invalid username or password!");
             }
