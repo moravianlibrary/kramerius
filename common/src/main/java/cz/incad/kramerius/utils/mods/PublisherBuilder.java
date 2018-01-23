@@ -44,7 +44,9 @@ public class PublisherBuilder extends AbstractBuilder {
         Node node = (Node) expr.evaluate(document, XPathConstants.NODE);
         if (node == null) {
             expr = xpath.compile("//mods:originInfo[@transliteration='publisher']/mods:publisher/text()");
+            node = (Node) expr.evaluate(document, XPathConstants.NODE);
         }
+
         if (node != null) {
             add(MODS_PUBLISHER, ((Text)node).getData(), map);
         }        
@@ -53,6 +55,7 @@ public class PublisherBuilder extends AbstractBuilder {
         node = (Node) expr.evaluate(document, XPathConstants.NODE);
         if (node == null) {
             expr = xpath.compile("//mods:originInfo[@transliteration='publisher']/mods:dateIssued/text()");
+            node = (Node) expr.evaluate(document, XPathConstants.NODE);
         }
         if (node != null) {
             add(MODS_DATE, ((Text)node).getData(), map);

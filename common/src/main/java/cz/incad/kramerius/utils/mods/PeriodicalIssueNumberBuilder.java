@@ -55,7 +55,9 @@ public class PeriodicalIssueNumberBuilder extends AbstractBuilder{
         Node node = (Node) expr.evaluate(document, XPathConstants.NODE);
         if (node == null) {
             expr = xpath.compile("//mods:titleInfo/mods:partNumber/text()");
+            node = (Node) expr.evaluate(document, XPathConstants.NODE);
         }
+
         if (node != null) {
             add(MODS_ISSUESNUMBER, ((Text)node).getData(), map);
             if (APPLICABLE_MODEL.equals(model)) {
@@ -68,6 +70,7 @@ public class PeriodicalIssueNumberBuilder extends AbstractBuilder{
             node = (Node) expr.evaluate(document, XPathConstants.NODE);
             if (node == null) {
                 expr = xpath.compile("//mods:originInfo/mods:dateIssued/text()");
+                node = (Node) expr.evaluate(document, XPathConstants.NODE);
             }
             if (node != null) {
                 add(MODS_DATE, ((Text)node).getData(), map);
