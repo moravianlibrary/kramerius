@@ -41,7 +41,7 @@ dependencies {
     compile "com.google.gwt:gwt-servlet:2.4.0"
     compile "commons-io:commons-io:2.3"
     compile "commons-codec:commons-codec:1.5"
-    compile "com.lowagie:itext:2.1.7"
+    compile "com.lowagie:itext:4.2.2"
     compile "org.antlr:stringtemplate:3.2.1"
     compile name:"djvuframe-0.8.09"
     compile name:"javadjvu-0.8.09"
