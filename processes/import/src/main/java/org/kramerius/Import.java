@@ -8,6 +8,7 @@ import cz.incad.kramerius.fedora.RepoModule;
 import cz.incad.kramerius.fedora.om.Repository;
 import cz.incad.kramerius.fedora.om.RepositoryException;
 import cz.incad.kramerius.fedora.om.RepositoryObject;
+import cz.incad.kramerius.fedora.utils.Fedora4Utils;
 import cz.incad.kramerius.relation.RelationService;
 import cz.incad.kramerius.relation.impl.RelationServiceImpl;
 import cz.incad.kramerius.resourceindex.ProcessingIndexFeeder;
@@ -706,7 +707,8 @@ public class Import {
      */
     public static boolean objectExists(String pid) {
         try {
-            String fedoraObjectURL = KConfiguration.getInstance().getFedoraHost() + "/get/" + pid;
+            String changedPid = Fedora4Utils.path(Fedora4Utils.normalizePath(pid));
+            String fedoraObjectURL = Fedora4Utils.endpoint() + "/data/" + changedPid;
             URLConnection urlcon = RESTHelper.openConnection(fedoraObjectURL, KConfiguration.getInstance().getFedoraUser(), KConfiguration.getInstance().getFedoraPass());
             urlcon.connect();
             Object target = urlcon.getContent();
