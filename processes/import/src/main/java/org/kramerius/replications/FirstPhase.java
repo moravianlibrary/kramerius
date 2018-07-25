@@ -26,6 +26,7 @@ import java.nio.channels.FileChannel;
 
 import javax.ws.rs.core.MediaType;
 
+import org.kramerius.TimeUtils;
 import org.kramerius.replications.pidlist.PIDsListLexer;
 import org.kramerius.replications.pidlist.PIDsListParser;
 
@@ -45,6 +46,7 @@ public class FirstPhase extends AbstractPhase  {
 
     @Override
     public void start(String url, String userName, String pswd, String replicationCollections, String replicationImages) throws PhaseException {
+        TimeUtils.printTimeToLog("FirstPhase.start.begin");
         try {
             String prepareURL = K4ReplicationProcess.prepareURL(url,replicationCollections);
             String descriptionURL = K4ReplicationProcess.descriptionURL(url);
@@ -59,11 +61,14 @@ public class FirstPhase extends AbstractPhase  {
             preparseIterate();
         } catch (IOException e) {
             throw new PhaseException(this,e);
+        } finally {
+            TimeUtils.printTimeToLog("FirstPhase.start.end");
         }
     }
 
 
     private void preparseIterate() throws PhaseException {
+        TimeUtils.printTimeToLog("FirstPhase.preparseIterate.begin");
         try {
             PIDsListLexer lexer = new PIDsListLexer(new FileReader(getIterateFile()));
             PIDsListParser parser = new PIDsListParser(lexer);
@@ -76,22 +81,27 @@ public class FirstPhase extends AbstractPhase  {
             throw new PhaseException(this,e);
         } catch (TokenStreamException e) {
             throw new PhaseException(this,e);
+        } finally {
+            TimeUtils.printTimeToLog("FirstPhase.preparseIterate.end");
         }
     }
 
 
     public void download(File destFile, String surl, String user, String pswd) throws PhaseException, IOException {
+        TimeUtils.printTimeToLog("FirstPhase.download.begin");
         Client c = Client.create();
         WebResource r = c.resource(surl);
         r.addFilter(new BasicAuthenticationClientFilter(user, pswd));
         String t = r.accept(MediaType.APPLICATION_JSON).get(String.class);
         IOUtils.saveToFile(t, destFile);
+        TimeUtils.printTimeToLog("FirstPhase.download.end");
     }
 
     
     @Override
     public void restart(String previousProcessUUID,File previousProcessRoot, boolean phaseCompleted, String url, String userName, String pswd,
                         String replicationCollections, String replicationImages) throws PhaseException {
+        TimeUtils.printTimeToLog("FirstPhase.restart.begin");
         try {
             if (!getDescriptionFile().exists()) {
                 File previousDescription = getDescriptionFile(previousProcessRoot);
@@ -116,6 +126,8 @@ public class FirstPhase extends AbstractPhase  {
             }
         } catch (IOException e) {
             throw new PhaseException(this,e);
+        } finally {
+            TimeUtils.printTimeToLog("FirstPhase.restart.end");
         }
     }
     

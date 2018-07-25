@@ -35,6 +35,7 @@ import cz.incad.kramerius.statistics.NullStatisticsModule;
 import cz.incad.kramerius.utils.conf.KConfiguration;
 import net.sf.json.JSONObject;
 
+import org.kramerius.TimeUtils;
 import org.kramerius.consistency.Consistency;
 import org.kramerius.replications.pidlist.PIDsListLexer;
 import org.kramerius.replications.pidlist.PIDsListParser;
@@ -57,6 +58,8 @@ public class ThirdPhase extends AbstractPhase {
     
     @Override
     public void start(String url, String userName, String pswd, String replicationCollections, String replicationImages) throws PhaseException {
+
+        TimeUtils.printTimeToLog("ThirdPhase.start.begin");
         try {
             List<String> paths = processIterateToFindRoot(getIterateFile());
             String rootPid = paths.isEmpty() ?  K4ReplicationProcess.pidFrom(url) : rootFromPaths(paths);
@@ -99,6 +102,9 @@ public class ThirdPhase extends AbstractPhase {
             throw new PhaseException(this,e);
         } catch (InterruptedException e) {
             throw new PhaseException(this,e);
+        } finally {
+
+            TimeUtils.printTimeToLog("ThirdPhase.start.end");
         }
     }
 
@@ -107,11 +113,18 @@ public class ThirdPhase extends AbstractPhase {
      * @return
      */
     private String rootFromPaths(List<String> paths) {
-        if (!paths.isEmpty()) {
-            String[] patharr = paths.get(0).split("/");
-            return patharr.length > 0 ?  patharr[0] : null; 
+
+        TimeUtils.printTimeToLog("ThirdPhase.start.begin");
+        try {
+            if (!paths.isEmpty()) {
+                String[] patharr = paths.get(0).split("/");
+                return patharr.length > 0 ?  patharr[0] : null;
+            }
+            return null;
+        } finally {
+
+            TimeUtils.printTimeToLog("ThirdPhase.start.end");
         }
-        return null;
     }
 
     public static List<String> processIterateToFindRoot(File iterate) throws FileNotFoundException, PhaseException, RecognitionException, TokenStreamException {
@@ -119,20 +132,32 @@ public class ThirdPhase extends AbstractPhase {
     }
 
     public static List<String> processIterateToFindRoot(Reader iterateReader) throws FileNotFoundException, PhaseException, RecognitionException, TokenStreamException {
-        PIDsListLexer lexer = new PIDsListLexer(iterateReader);
-        PIDsListParser parser = new PIDsListParser(lexer);
-        Paths pth = new Paths();
-        parser.setPidsListCollect(pth);
-        parser.pids();
-        return pth.getPaths();
+
+        TimeUtils.printTimeToLog("ThirdPhase.processIterateToFindRoot.begin");
+
+        try {
+            PIDsListLexer lexer = new PIDsListLexer(iterateReader);
+            PIDsListParser parser = new PIDsListParser(lexer);
+            Paths pth = new Paths();
+            parser.setPidsListCollect(pth);
+            parser.pids();
+            return pth.getPaths();
+        } finally {
+
+            TimeUtils.printTimeToLog("ThirdPhase.processIterateToFindRoot.end");
+        }
         //return parser.getPidsListCollect().
     }
 
     @Override
     public void restart(String previousProcessUUID, File previousProcessRoot, boolean phaseCompleted, String url, String userName, String pswd, String replicationCollections, String replicationImages) throws PhaseException {
-        if (!phaseCompleted) {
-            this.start(url, userName, pswd, replicationCollections, replicationImages);
-        }
+
+
+        TimeUtils.printTimeToLog("ThirdPhase.processIterateToFindRoot.begin");
+            if (!phaseCompleted) {
+                this.start(url, userName, pswd, replicationCollections, replicationImages);
+            }
+        TimeUtils.printTimeToLog("ThirdPhase.processIterateToFindRoot.end");
     }
     
     static class Paths implements PidsListCollect {

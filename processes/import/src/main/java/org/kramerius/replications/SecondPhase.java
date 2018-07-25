@@ -68,6 +68,7 @@ import java.util.List;
 import java.util.Stack;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import org.kramerius.TimeUtils;
 
 import static java.util.concurrent.Executors.*;
 
@@ -92,6 +93,7 @@ public class SecondPhase extends AbstractPhase  {
 
     @Override
     public void start(String url, String userName, String pswd, String replicationCollections,String replicationImages) throws PhaseException {
+        TimeUtils.printTimeToLog("SecondPhase.start.begin");
         try {
             this.executorService = newFixedThreadPool(NUMBER_OF_THREADS);
             this.findPid = false;
@@ -120,9 +122,11 @@ public class SecondPhase extends AbstractPhase  {
             }
 
         }
+        TimeUtils.printTimeToLog("SecondPhase.start.end");
     }
 
     public void pidEmitted(String pid, String url, String userName, String pswd) throws PhaseException {
+        TimeUtils.printTimeToLog("SecondPhase.pidEmitted.begin");
         try {
             LOGGER.info("processing pid '"+pid+"'");
 
@@ -164,10 +168,13 @@ public class SecondPhase extends AbstractPhase  {
             throw new PhaseException(this,e);
         } catch (IOException e) {
             throw new PhaseException(this,e);
+        } finally {
+            TimeUtils.printTimeToLog("SecondPhase.pidEmitted.end");
         }
     }
 
     private void replicateImg(String pid, String url, File foxml) throws PhaseException {
+        TimeUtils.printTimeToLog("SecondPhase.replicateImg.begin");
         try {
             String handlePid = K4ReplicationProcess.pidFrom(url);
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -206,6 +213,8 @@ public class SecondPhase extends AbstractPhase  {
         } catch (ParserConfigurationException | IOException | XPathExpressionException | SAXException
                 | TransformerException e) {
             throw new PhaseException(this, e);
+        } finally {
+            TimeUtils.printTimeToLog("SecondPhase.replicateImg.end");
         }
     }
 
@@ -221,6 +230,8 @@ public class SecondPhase extends AbstractPhase  {
 
 
     public void ingest(File foxmlfile) throws PhaseException{
+
+        TimeUtils.printTimeToLog("SecondPhase.ingest.begin");
         LOGGER.info("ingesting '"+foxmlfile.getAbsolutePath()+"'");
         //Import.initialize(KConfiguration.getInstance().getProperty("ingest.user"), KConfiguration.getInstance().getProperty("ingest.password"));
         try {
@@ -233,10 +244,15 @@ public class SecondPhase extends AbstractPhase  {
         } catch (RepositoryException e) {
             if (e.getCause() != null) throw new PhaseException(this, e.getCause());
             else throw new PhaseException(this,e);
+        } finally {
+
+            TimeUtils.printTimeToLog("SecondPhase.ingest.end");
         }
     }
     
     public File pidParseAndGetObjectId(InputStream foxmlStream, String pid) throws LexerException, IOException, PhaseException {
+
+        TimeUtils.printTimeToLog("SecondPhase.pidParseAndGetObjectId.begin");
         FileOutputStream fos = null;
         File foxml = createFOXMLFile(pid);
         try {
@@ -245,44 +261,57 @@ public class SecondPhase extends AbstractPhase  {
             return foxml;
         } finally {
             IOUtils.closeQuietly(fos);
+
+            TimeUtils.printTimeToLog("SecondPhase.pidParseAndGetObjectId.end");
         }
     }
 
     public InputStream rawFOXMLData(String pid, String url, String userName, String pswd) throws PhaseException {
+
+        TimeUtils.printTimeToLog("SecondPhase.rawFOXMLData.begin");
         Client c = Client.create();
         WebResource r = c.resource(K4ReplicationProcess.foxmlURL(url, pid, this.replicationCollections));
         r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
         InputStream t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
+        TimeUtils.printTimeToLog("SecondPhase.rawFOXMLData.end");
         return t;
     }
 
     public InputStream orignalImgData(String pid, String url) {
+        TimeUtils.printTimeToLog("SecondPhase.orignalImgData.begin");
         Client c = Client.create();
         WebResource r = c.resource(K4ReplicationProcess.imgOriginalURL(url, pid));
         //r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
         InputStream t = r.accept("image/jp2").get(InputStream.class); // memory?
+        TimeUtils.printTimeToLog("SecondPhase.orignalImgData.end");
         return t;
     }
     
 
     public File createFOXMLFile(String pid) throws LexerException, IOException, PhaseException {
+        TimeUtils.printTimeToLog("SecondPhase.createFOXMLFile.begin");
         String objectId = pidParseAndGetObjectId(pid);
         File foxmlFile = new File(objectId+".fo.xml");
         if (!foxmlFile.exists()) foxmlFile.createNewFile();
         if (!foxmlFile.exists()) throw new PhaseException(this,"file not exists '"+foxmlFile.getAbsolutePath()+"'");
+        TimeUtils.printTimeToLog("SecondPhase.createFOXMLFile.end");
         return foxmlFile;
         
     }
 
     private static String pidParseAndGetObjectId(String pid) throws LexerException {
+        TimeUtils.printTimeToLog("SecondPhase.pidParseAndGetObjectId.begin");
         PIDParser pidParser = new PIDParser(pid);
         pidParser.objectPid();
+
+        TimeUtils.printTimeToLog("SecondPhase.pidParseAndGetObjectId.end");
         return pidParser.getObjectId();
     }
 
 
     private void processIterate(String url, String userName, String pswd) throws PhaseException {
 
+        TimeUtils.printTimeToLog("SecondPhase.processIterate.begin");
         try {
             PIDsListLexer lexer = new PIDsListLexer(new FileReader(getIterateFile()));
             PIDsListParser parser = new PIDsListParser(lexer);
@@ -302,6 +331,9 @@ public class SecondPhase extends AbstractPhase  {
                 throw new PhaseException(this,thr);
             } else throw new PhaseException(this,e);
         } finally {
+
+            TimeUtils.printTimeToLog("SecondPhase.processIterate.end");
+
             LOGGER.info("All pids have been processed .. ");
             try {
                 this.executorService.shutdown();
@@ -317,6 +349,8 @@ public class SecondPhase extends AbstractPhase  {
     @Override
     public void restart(String previousProcessUUID, File previousProcessRoot, boolean phaseCompleted, String url, String userName, String pswd,
                         String replicationCollections, String replicationImages) throws PhaseException {
+
+        TimeUtils.printTimeToLog("SecondPhase.restart.begin");
         if (!phaseCompleted) {
             // initalize import
 
@@ -330,11 +364,16 @@ public class SecondPhase extends AbstractPhase  {
             this.replicationImages = Boolean.parseBoolean(replicationImages);
             processIterate(url, userName, pswd);
         }
+
+        TimeUtils.printTimeToLog("SecondPhase.restart.end");
     }
 
     public boolean findPid(String pid) throws LexerException, IOException {
+
+        TimeUtils.printTimeToLog("SecondPhase.findPid.begin");
         FedoraAccess fa = injector.getInstance(Key.get(FedoraAccess.class, Names.named("rawFedoraAccess")));
         String objectId = pidParseAndGetObjectId(pid);
+        TimeUtils.printTimeToLog("SecondPhase.findPid.end");
         return (fa.isObjectAvailable(objectId) &&  fa.isStreamAvailable(objectId, FedoraUtils.RELS_EXT_STREAM));
     }
 
@@ -355,6 +394,7 @@ public class SecondPhase extends AbstractPhase  {
 
         @Override
         public void pidEmitted(String pid)  {
+            TimeUtils.printTimeToLog("SecondPhase.pidEmitted.begin");
             if ((pid.startsWith("'")) || (pid.startsWith("\""))) {
                 pid = pid.substring(1,pid.length()-1);
             }
@@ -366,6 +406,9 @@ public class SecondPhase extends AbstractPhase  {
                 } catch (PhaseException e) {
                     SecondPhase.this.exceptions.add(e);
                     throw new RuntimeException(e);
+                } finally {
+
+                    TimeUtils.printTimeToLog("SecondPhase.pidEmitted.end");
                 }
             });
 
@@ -374,10 +417,14 @@ public class SecondPhase extends AbstractPhase  {
 
         @Override
         public void pathEmitted(String path) {
+
+            TimeUtils.printTimeToLog("SecondPhase.pathEmitted.begin");
             if ((path.startsWith("'")) || (path.startsWith("\""))) {
                 path = path.substring(1,path.length()-1);
             }
             SecondPhase.this.pathEmmited(path, this.url, this.userName, this.pswd);
+
+            TimeUtils.printTimeToLog("SecondPhase.pathEmitted.end");
         }
 
 

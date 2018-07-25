@@ -16,6 +16,7 @@ import org.json.JSONObject;
 import cz.incad.kramerius.utils.IOUtils;
 import cz.incad.kramerius.utils.RESTHelper;
 import cz.incad.kramerius.utils.StringUtils;
+import org.kramerius.TimeUtils;
 
 public class ZeroPhase extends AbstractPhase {
 
@@ -24,12 +25,15 @@ public class ZeroPhase extends AbstractPhase {
 	
 	@Override
 	public void start(String url, String userName, String pswd, String replicationCollections, String replicationImages) throws PhaseException {
-        validate(url, replicationCollections);
+		TimeUtils.printTimeToLog("ZeroPhase.start.begin");
+		validate(url, replicationCollections);
+		TimeUtils.printTimeToLog("ZeroPhase.start.end");
 	}
 
 
 
 	private void validate(String url, String replicationCollections) throws PhaseException {
+		TimeUtils.printTimeToLog("ZeroPhase.validate.begin");
 		try {
         	if (Boolean.parseBoolean(replicationCollections)) {
             	String pid = K4ReplicationProcess.pidFrom(url);
@@ -47,11 +51,13 @@ public class ZeroPhase extends AbstractPhase {
         } catch (IOException e) {
 			throw new PhaseException(this, e.getMessage());
 		}
+		TimeUtils.printTimeToLog("ZeroPhase.validate.end");
 	}
 
 
 
 	protected void validate(int[] version) throws PhaseException {
+		TimeUtils.printTimeToLog("ZeroPhase.validateVersion.begin");
 		if (version.length == 3) {
 			int _v = version[0]*100+version[1]*10+version[2];
 			if (_v <537) {
@@ -60,6 +66,7 @@ public class ZeroPhase extends AbstractPhase {
 		} else {
 			throwInvalidVersionException(version);
 		}
+		TimeUtils.printTimeToLog("ZeroPhase.validateVersion.end");
 	}
 
 
@@ -76,6 +83,7 @@ public class ZeroPhase extends AbstractPhase {
 
 
 	private static int[] versions(InputStream inputStream) throws IOException {
+		TimeUtils.printTimeToLog("ZeroPhase.versions.start");
 		JSONObject jsonobj = new JSONObject(IOUtils.readAsString(inputStream, Charset.forName("UTF-8"), true));
 		String string = jsonobj.getString("version");
 		StringTokenizer tokenizer = new StringTokenizer(string, ".");
@@ -85,7 +93,10 @@ public class ZeroPhase extends AbstractPhase {
 		String qualifier = patchVersion.contains("_") ? patchVersion.substring(patchVersion.indexOf("_"), patchVersion.length()) : "";
 
 		patchVersion = !qualifier.equals("") ? patchVersion.substring(0, patchVersion.indexOf("_")) : patchVersion;
-		
+
+
+		TimeUtils.printTimeToLog("ZeroPhase.versions.end");
+
 		return  new int[] {Integer.parseInt(masterVersion),Integer.parseInt(minorVersion),Integer.parseInt(patchVersion)};
 	}
 
