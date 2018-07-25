@@ -708,7 +708,7 @@ public class Import {
     public static boolean objectExists(String pid) {
         try {
             String changedPid = Fedora4Utils.path(Fedora4Utils.normalizePath(pid));
-            String fedoraObjectURL = Fedora4Utils.endpoint() + changedPid;
+            String fedoraObjectURL = Fedora4Utils.endpoint() + "/data/" + changedPid;
             URLConnection urlcon = RESTHelper.openConnection(fedoraObjectURL, KConfiguration.getInstance().getFedoraUser(), KConfiguration.getInstance().getFedoraPass());
             urlcon.connect();
             Object target = urlcon.getContent();
