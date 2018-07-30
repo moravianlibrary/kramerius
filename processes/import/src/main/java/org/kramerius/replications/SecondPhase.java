@@ -126,7 +126,7 @@ public class SecondPhase extends AbstractPhase  {
     }
 
     public void pidEmitted(String pid, String url, String userName, String pswd) throws PhaseException {
-        TimeUtils.printTimeToLog("SecondPhase.pidEmitted.begin");
+        TimeUtils.printTimeToLog("SecondPhase.pidEmittedLarge.begin");
         try {
             LOGGER.info("processing pid '"+pid+"'");
 
@@ -169,7 +169,7 @@ public class SecondPhase extends AbstractPhase  {
         } catch (IOException e) {
             throw new PhaseException(this,e);
         } finally {
-            TimeUtils.printTimeToLog("SecondPhase.pidEmitted.end");
+            TimeUtils.printTimeToLog("SecondPhase.pidEmittedLarge.end");
         }
     }
 
