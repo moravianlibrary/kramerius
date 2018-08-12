@@ -61,7 +61,8 @@ public class AuthorBuilder extends AbstractBuilder {
         XPath xpath = getFactory().newXPath();
         xpath.setNamespaceContext(new FedoraNamespaceContext());
         
-        XPathExpression expr = xpath.compile("//mods:name[@type='personal']");
+//        XPathExpression expr = xpath.compile("//mods:name[@type='personal']");
+        XPathExpression expr = xpath.compile("//mods:name/mods:namePart/text()");
         NodeList nlist = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
         for (int i = 0,ll=nlist.getLength(); i < ll; i++) {
             Node item = nlist.item(i);
