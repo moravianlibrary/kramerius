@@ -161,7 +161,6 @@
    </c:if>
 </c:if>
 
-
 <c:if test="${fb.buttonEnabled}">
 <!-- facebook support  -->
 <div id="fb-root"></div>
