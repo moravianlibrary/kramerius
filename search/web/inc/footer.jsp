@@ -132,6 +132,7 @@
 <c:if test="${param.debug==true}">${url}</c:if>
 <div id="test"></div>
 
+<%-- v konfiguracnim souboru to je promenna googleanalytics.webpropertyid= --%>
 <c:if test="${ga.ready}">
 <%-- Google Analytics. Configuration directives - googleanalytics.webpropertyid=   (For measuring code UA-XXXXXXXXX-1)
      For code GTM-XXXXXX /search/web/inc/html_header.jsp
@@ -159,8 +160,6 @@
       </noscript>
    </c:if>
 </c:if>
-
-
 
 <c:if test="${fb.buttonEnabled}">
 <!-- facebook support  -->
