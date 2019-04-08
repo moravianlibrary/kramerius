@@ -1,7 +1,7 @@
 package cz.incad.kramerius.service.impl;
 
 
-import com.sun.javafx.collections.MappingChange;
+
 import cz.incad.kramerius.FedoraNamespaces;
 import cz.incad.kramerius.ObjectPidsPath;
 import cz.incad.kramerius.SolrAccess;
