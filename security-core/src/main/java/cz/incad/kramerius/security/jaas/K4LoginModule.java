@@ -90,6 +90,10 @@ public class K4LoginModule implements LoginModule {
                 LOGGER.info("Login failed for user \"" + loginName + "\": invalid username or password!");
                 throw new FailedLoginException("Invalid username or password!");
             }
+            if (!this.logged) {
+                  LOGGER.info("Login failed for user \"" + loginName + "\": invalid username or password!");
+                  throw new FailedLoginException("Invalid username or password!");
+            }
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, e.getMessage(), e);
         } catch (UnsupportedCallbackException e) {
@@ -130,7 +134,7 @@ public class K4LoginModule implements LoginModule {
     public boolean commit() throws LoginException {
         if (!this.logged)
             return false;
-        associateK4UserPrincipal(this.subject, ""+foundUser.getId());
+        associateK4UserPrincipal(this.subject, ""+foundUser.getLoginname());
         return true;
     }
 
