@@ -73,9 +73,6 @@ var Da = function(elem, data, options) {
         pred--;
     }
     this.minYear = pred;
-
-    this.minYear = 1400;
-    this.maxYear = actualYear;
     
     this.period = this.maxYear - this.minYear;
     var da = this;
