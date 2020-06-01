@@ -59,6 +59,24 @@ public class PolicyServiceImpl implements PolicyService {
             }
         }
     }
+    
+    @Override
+    public void setPolicy(String pid, String policyName, String level) throws IOException {
+        Set<String> pids = fedoraAccess.getPids(pid);
+        if (level != null && level.equals("true")) {
+            setPolicyForNode(pid, policyName);
+        }
+        else {
+            for (String s : pids) {
+                String p = s.replace(INFO, "");
+                try{
+                    setPolicyForNode(p, policyName);
+                }catch(Exception ex){
+                    LOGGER.warning("Cannot set policy for object "+p+", skipping: "+ex);
+                }
+            }
+        }
+    }
 
     public void setPolicyForNode(String pid, String policyName) {
         LOGGER.info("Set policy pid: "+pid+" policy: "+policyName);
@@ -170,8 +188,9 @@ public class PolicyServiceImpl implements PolicyService {
     }
 
     /**
-     * args[1] - uuid of the root item (withou uuid: prefix)
      * args[0] - policy to set (public, private)
+     * args[1] - uuid of the root item
+     * args[2] - if this process is only for the selected level
      * @throws IOException
      */
 
@@ -184,7 +203,7 @@ public class PolicyServiceImpl implements PolicyService {
         PolicyServiceImpl inst = new PolicyServiceImpl();
         inst.fedoraAccess = new FedoraAccessImpl(null, null);
         inst.configuration = KConfiguration.getInstance();
-        inst.setPolicy(args[1], args[0]);
+        inst.setPolicy(args[1], args[0], args[2]);
         IndexerProcessStarter.spawnIndexer(true, "Reindex policy "+args[1]+":"+args[0], args[1]);
         LOGGER.info("PolicyService finished.");
     }

@@ -129,6 +129,26 @@ public class SecuredFedoraAccessImpl implements FedoraAccess {
     public String getDonator(String pid) throws IOException {
         return rawAccess.getDonator(pid);
     }
+    
+    @Override
+    public String getFirstItemPid(Document relsExt) throws IOException {
+        return rawAccess.getFirstItemPid(relsExt);
+    }
+
+    @Override
+    public String getFirstItemPid(String pid) throws IOException {
+        return rawAccess.getFirstItemPid(pid);
+    }
+    
+    @Override
+    public String getFirstVolumePid(Document relsExt) throws IOException {
+        return rawAccess.getFirstItemPid(relsExt);
+    }
+
+    @Override
+    public String getFirstVolumePid(String pid) throws IOException {
+        return rawAccess.getFirstItemPid(pid);
+    }
 
     @Override
     public List<Element> getPages(String pid, boolean deep) throws IOException {
@@ -208,6 +228,7 @@ public class SecuredFedoraAccessImpl implements FedoraAccess {
                 || FedoraUtils.TEXT_OCR_STREAM.equals(streamName)
                 || FedoraUtils.MP3_STREAM.equals(streamName)
                 || FedoraUtils.WAV_STREAM.equals(streamName)
+                || FedoraUtils.ALTO_STREAM.equals(streamName)
                 || FedoraUtils.OGG_STREAM.equals(streamName);
     }
 

@@ -31,12 +31,9 @@ public class ProcessAggregator {
     static java.util.logging.Logger LOGGER = java.util.logging.Logger.getLogger(ProcessAggregator.class.getName());
     
     public static void main(String[] args) throws Exception {
-        String uuid = System.getProperty(ProcessStarter.UUID_KEY);
-        
         String def = args[0];
-        String[] processDefsParams = Arrays.copyOfRange(args, 1, args.length);
-        
-        
+        String[] processDefsParams = Arrays.copyOfRange(args, 1, args.length);  
+       
         for (int i = 0; i < processDefsParams.length; i++) {
             LOGGER.info("starting process ("+def+" with params "+Arrays.asList(processDefsParams[i]));
             String encodedParams =  URLEncoder.encode(processDefsParams[i], "UTF-8");
