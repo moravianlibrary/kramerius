@@ -1,10 +1,7 @@
 package cz.incad.Kramerius.imaging;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -52,8 +49,6 @@ public class PrintPDFServlet extends GuiceServlet {
 
     public static Logger LOGGER = Logger.getLogger(PrintPDFServlet.class.getName());
 
-    
-    
     public static enum Page {
 
         A4(PageSize.A4), A3(PageSize.A3);
@@ -69,7 +64,6 @@ public class PrintPDFServlet extends GuiceServlet {
         }
     }
 
-    
     public static enum ImageOP {
         CUT {
             @Override
@@ -106,8 +100,7 @@ public class PrintPDFServlet extends GuiceServlet {
             }
         };
 
-        protected abstract void imageData(FedoraAccess fa, String pid,HttpServletRequest req,  OutputStream os) throws IOException ;
-
+        protected abstract void imageData(FedoraAccess fa, String pid,HttpServletRequest req,  OutputStream os) throws IOException;
     }
 
     @Inject
@@ -125,8 +118,7 @@ public class PrintPDFServlet extends GuiceServlet {
 
     @Inject
     StatisticsAccessLog statisticsAccessLog;
-    
-    
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -137,8 +129,6 @@ public class PrintPDFServlet extends GuiceServlet {
             String pids = req.getParameter("pids");
             String pageSize = req.getParameter("pagesize");
             String imgop = req.getParameter("imgop");
-
-
             if (StringUtils.isAnyString(pid)) {
                 if (canBeRead(pid) && canBeRenderedAsPDF(pid)) {
 
@@ -154,7 +144,6 @@ public class PrintPDFServlet extends GuiceServlet {
                         LOGGER.log(Level.SEVERE, e.getMessage(),e);
                     }
 
-                    
                     File renderedFile = File.createTempFile("local", "print");
                     filesToDelete.add(renderedFile);
                     FileOutputStream fos = new FileOutputStream(renderedFile);
@@ -171,7 +160,7 @@ public class PrintPDFServlet extends GuiceServlet {
                     document.close();
                     
                 } else {
-                    resp.sendError(HttpServletResponse.SC_FORBIDDEN);
+                    sendForbiddenErrorMsgPage(resp);
                 }
             } else {
                 String[] pds = pids.split(",");
@@ -183,10 +172,8 @@ public class PrintPDFServlet extends GuiceServlet {
                 for (int i = 0; i < pds.length; i++) {
                     if (!canBePDFRendered) canBePDFRendered = canBeRenderedAsPDF(pds[i]);
                 }
-                
-                
-                if (canBeRendered && canBePDFRendered) {
 
+                if (canBeRendered && canBePDFRendered) {
                     Document document = new Document(Page.valueOf(pageSize).getRect());
                     ServletOutputStream sos = resp.getOutputStream();
                     PdfWriter.getInstance(document, sos);
@@ -206,7 +193,6 @@ public class PrintPDFServlet extends GuiceServlet {
                         FileOutputStream fos = new FileOutputStream(nfile);
                         ImageOP.valueOf(imgop).imageData(this.fedoraAccess, pds[i], req, fos);
                         Image image = Image.getInstance(nfile.toURI().toURL());
-
                         image.scaleToFit(
                                 document.getPageSize().getWidth() - document.leftMargin()
                                         - document.rightMargin(),
@@ -219,7 +205,7 @@ public class PrintPDFServlet extends GuiceServlet {
                     }
                     document.close();
                 } else {
-                    resp.sendError(HttpServletResponse.SC_FORBIDDEN);
+                    sendForbiddenErrorMsgPage(resp);
                 }
             }
         } catch (BadElementException e) {
@@ -255,5 +241,33 @@ public class PrintPDFServlet extends GuiceServlet {
         return false;
     }
 
-    
+    private void sendForbiddenErrorMsgPage(HttpServletResponse resp) throws IOException {
+        String forbiddenMsgHtmlPage = "<!DOCTYPE html>" +
+                "<html lang=\"id\" dir=\"ltr\">" +
+                "<head>" +
+                "<meta charset=\"utf-8\" />" +
+                "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\" />" +
+                "<meta name=\"description\" content=\"\" />" +
+                "<meta name=\"author\" content=\"\" />" +
+                "<title>Kramerius</title>" +
+                "<link rel=\"icon\" type=\"image/x-icon\" href=\"http://www.digitalniknihovna.cz/assets/shared/favicon.ico\">" +
+                "<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css\" />" +
+                "<link rel=\"stylesheet\" href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css\" " +
+                "integrity=\"sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB\" crossorigin=\"anonymous\" />" +
+                "</head>" +
+                "<body class=\"bg-white text-black py-5\">" +
+                "<div class=\"container py-5\">" +
+                "<div class=\"row\">" +
+                "<div class=\"col-md-2 text-center\">" +
+                "<p><i class=\"fa fa-exclamation-triangle fa-5x\"></i></p></div><div class=\"col-md-10\"><p></p>" +
+                "<h3>Z autorsky chráněných dokumentů nelze generovat PDF.</h3>" +
+                "Přejděte na <a routerlink=\"/\" href=\"http://www.digitalniknihovna.cz/\">úvodní stránku</a>" +
+                "</div></div></div></body></html>";
+        resp.setContentType("text/html; charset=UTF-8");
+        resp.setCharacterEncoding("UTF-8");
+        PrintWriter out = resp.getWriter();
+        out.println(forbiddenMsgHtmlPage);
+        out.flush();
+        out.close();
+    }
 }
