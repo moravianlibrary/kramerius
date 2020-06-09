@@ -14,7 +14,6 @@ import org.w3c.dom.NamedNodeMap;
 import javax.xml.xpath.*;
 
 import java.io.StringReader;
-import java.text.DateFormat;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -33,18 +32,9 @@ import java.util.stream.Collectors;
  */
 public class BiblioModsDateParser {
 
-    /* Textual representation of publication date
-     from BIBLIO MODS data stream without any changes */
-    private String dateStr;
-
-    /* Beginning year of publication */
-    private String yearBegin;
-
-    /* End year of publication */
-    private String yearEnd;
-
     /* Structure to cache years for certain uuid */
-    private HashMap<String, DateQuintet> dateCache;
+    private final HashMap<String, DateQuintet> dateCache;
+    private static final Logger logger = Logger.getLogger(BiblioModsDateParser.class.getName());
 
     /* XPath expressions for BIBLIO MODS date nodes extraction */
     private final String prefix = "//mods:mods/";
@@ -65,9 +55,6 @@ public class BiblioModsDateParser {
             "(?<![0-9])[\\^]{4}(?![0-9])"    // ^^^^
     );
 
-    private static final Logger logger = Logger.getLogger(BiblioModsDateParser.class.getName());
-
-
     public BiblioModsDateParser() {
         dateCache = new HashMap<>();
         compileModsDateXPaths();
@@ -86,7 +73,10 @@ public class BiblioModsDateParser {
             try {
                 modsDateXPathExps.add(xpath.compile(dateXPathStr));
             } catch (XPathExpressionException e) {
-                logger.warning("Can't compile XPath expressions to retrieve BIBLIO MODS date nodes!");
+                logger.warning(
+                        "Can't compile XPath expressions \"" +
+                                dateXPathStr + "\" to retrieve BIBLIO MODS date nodes!"
+                );
                 logger.warning(e.getMessage());
             }
         }
@@ -115,39 +105,35 @@ public class BiblioModsDateParser {
 
     /**
      * Retrieves date nodes from BIBLIO MODS data stream by precompiled XPath expressions,
-     * then parses the textual contents of the nodes by precompiled regular expressions,
-     * stores parsed years to the parser attributes. At the end creates quintet structure
-     * filled by that years, stores this structure to the date cache using document uuid, and returns it.
-     * Returns null if BIBLIO MODS has no date nodes.
+     * then parses the textual contents of the nodes by precompiled regular expressions.
+     * Fills a quintet structure by parsed years and stores it to the date cache using document uuid.
+     * Returns filled quintet structure or null if BIBLIO MODS has no date nodes.
      *
      * @param  biblioMods BIBLIO MODS data stream
      * @param  uuid       uuid to save parsed dates to cache
-     * @return            years for uuid or null
+     * @return            years in an auxiliary structure or null
      * @throws XPathExpressionException
      * @see    DateQuintet
      */
     public DateQuintet extractYearsFromBiblioMods(Document biblioMods, String uuid)
             throws XPathExpressionException {
 
-        clearActualDates();
-
         List<Node> dateNodes = getDateNodes(biblioMods);
         if (dateNodes.isEmpty()) {
             return null;  // BIBLIO MODS has no dates
         }
 
-        // parse all date nodes in MODS, save dates to object attributes
+        // parse all date nodes in MODS, save dates to structure
+        DateQuintet dateQuintet = new DateQuintet();
         for (Node dateNode : dateNodes) {
-            distributeDateFromNode(dateNode);
+            parseNodeAndFillDateQuintet(dateNode, dateQuintet);
         }
+        setBeginAndEndYearsIfEmpty(dateQuintet, dateQuintet.getYear());
 
-        // parse dates in string format, setup date quintet
-        DateQuintet dates = prepareDateQuintet();
+        // save prepared quintet to the date cache
+        dateCache.put(uuid, dateQuintet);
 
-        // save prepared quartet to the date cache
-        dateCache.put(uuid, dates);
-
-        return dates;
+        return dateQuintet;
     }
 
     /**
@@ -172,62 +158,82 @@ public class BiblioModsDateParser {
     }
 
     /**
-     * Stores the textual content of given node to the parser attributes.
-     * Uses the node attributes (point='start' or point='end') to decide what date it is.
-     * If node has no attribute saves date to parser attribute that must be parsed later.
+     * Parses a document node with the text content and fills a helper structure.
      *
-     * @param node node containing date in textual format
+     * @param dateNode     document node containing the date in string representation
+     * @param dateQuintet  auxiliary structure to fill
      */
-    private void distributeDateFromNode(Node node) {
-        NamedNodeMap attributes = node.getParentNode().getAttributes();
-        String nodeTextContent = node.getTextContent();
+    private void parseNodeAndFillDateQuintet(Node dateNode, DateQuintet dateQuintet) {
+        NamedNodeMap attributes = dateNode.getParentNode().getAttributes();
+        String dateStr = dateNode.getTextContent();
 
-        // set only dateStr if 'point' attribute is not found
         if (attributes == null || attributes.getLength() == 0 ||
                 attributes.getNamedItem("point") == null) {
-            dateStr = nodeTextContent;
+            parseYearsFromDateStr(dateStr, dateQuintet);
+            dateQuintet.setDateStr(dateStr);
         }
-        // otherwise get yearBegin or yearEnd
         else {
             Node point = attributes.getNamedItem("point");
+            if (point == null) return;
+
             if ("start".equals(point.getNodeValue())) {
-                yearBegin = nodeTextContent;
+                dateQuintet.setYearBegin(dateStr);
             } else {
-                yearEnd = nodeTextContent;
+                dateQuintet.setYearEnd(dateStr);
             }
         }
     }
 
     /**
-     * Parses extracted date in order to get rid of extra characters
-     * and get the year of publication in usual numeric representation.
+     * Gets all possible years of publication and fills an auxiliary quintet structure.
+     * If there is more than one year, chooses minimal and maximal and set them as beginning and end years
+     * of publication. In this case general year is the end year of publication.
+     *
+     * @param dateStr     string to parse
+     * @param dateQuintet auxiliary structure to fill
+     */
+    private void parseYearsFromDateStr(String dateStr, DateQuintet dateQuintet) {
+        // apply date patterns and get all possible years from dateStr
+        List<String> yearsStr = getAllMatchedYears(dateStr);
+        if (yearsStr.size() > 1) {
+            // several years have been found -> setup begin and end dates
+            List<Integer> yearsInt = yearsStr.stream().map(Integer::valueOf).collect(Collectors.toList());
+            dateQuintet.setYearBegin(String.valueOf(Collections.min(yearsInt)));
+            String yearEnd = String.valueOf(Collections.max(yearsInt));
+            dateQuintet.setYearEnd(yearEnd);
+            dateQuintet.setYear(yearEnd);
+        } else if (!yearsStr.isEmpty()) {
+            dateQuintet.setYear(yearsStr.get(0));
+        }
+        String year = dateQuintet.getYear();
+        dateQuintet.setDate(parseDateOrSetDefault(dateStr, year));
+    }
+
+    /**
      * If the years of the beginning or end of publication are empty,
      * fills them with the general year of publication.
-     * Returns quintet structure containing parsed dates.
      *
-     * @return quintet structure containing parsed dates
-     * @see    DateQuintet
+     * @param dateQuintet auxiliary structure to check and fill
+     * @param year        default year
      */
-    private DateQuintet prepareDateQuintet() {
-        String year = parseYearFromDateStr();
-        Date date = parseDateOrSetDefault(year);
-        if (yearBegin.isEmpty()) {
-            yearBegin = year;
+    private void setBeginAndEndYearsIfEmpty(DateQuintet dateQuintet, String year) {
+        if (dateQuintet.getYearBegin().isEmpty()) {
+            dateQuintet.setYearBegin(year);
         }
-        if (yearEnd.isEmpty()) {
-            yearEnd = year;
+        if (dateQuintet.getYearEnd().isEmpty()) {
+            dateQuintet.setYearEnd(year);
         }
-        return new DateQuintet(date, dateStr, yearBegin, yearEnd, year);
     }
 
     /**
      * Tries to parse original string containing date of publication.
      * If can't parse returns date specified by general year of publication.
      *
-     * @param   defaultYear year to parse if original date in string can't be parsed
-     * @return              date of publication or null
+     * @param  dateStr     string containing the date
+     * @param  defaultYear year to parse if the date in string can't be parsed
+     * @return             date of publication or null
      */
-    private Date parseDateOrSetDefault(String defaultYear) {
+    private Date parseDateOrSetDefault(String dateStr, String defaultYear) {
         Date publicationDate = parseDateFromStr(dateStr);
         if (publicationDate == null)
             publicationDate = parseDateFromStr(defaultYear);
@@ -235,37 +241,13 @@ public class BiblioModsDateParser {
     }
 
     /**
-     * Gets all possible years of publication and return general year of publication.
-     * If there is more years, chooses minimal and maximal and set them as beginning and end years
-     * of publication. In this case general year is the end year of publication.
-     *
-     * @return general year of publication
-     */
-    private String parseYearFromDateStr() {
-        String result = "";
-
-        // apply date patterns and get all possible years from dateStr
-        List<String> yearsStr = getAllMatchedYears();
-        if (yearsStr.size() > 1) {
-            // several years have been found -> setup begin and end dates
-            List<Integer> yearsInt = yearsStr.stream().map(Integer::valueOf).collect(Collectors.toList());
-            yearBegin = String.valueOf(Collections.min(yearsInt));
-            yearEnd = String.valueOf(Collections.max(yearsInt));
-            result = yearEnd;
-        } else if (!yearsStr.isEmpty()) {
-            result = yearsStr.get(0);
-        }
-
-        return result;
-    }
-
-    /**
      * Parses extracted date in textual representation by different precompiled regular expressions.
      * In parsed years replaces characters denoting an uncertain publication date.
      *
-     * @return list of all possible years of publication without any extra character
+     * @param  dateStr  string to parse
+     * @return          list of all possible years of publication without any extra character
      */
-    private List<String> getAllMatchedYears() {
+    private List<String> getAllMatchedYears(String dateStr) {
         List<String> years = new ArrayList<>();
         for (Pattern pattern : yearRegexPatterns) {
             Matcher matcher = pattern.matcher(dateStr);
@@ -281,34 +263,24 @@ public class BiblioModsDateParser {
     /**
      * Replaces non-digit characters denoting an uncertain publication date from string.
      *
-     * @param  str string to replace characters in it
-     * @return     string without characters denoting an uncertain publication date
+     * @param  dateStr string to replace characters in it
+     * @return         string without characters denoting an uncertain publication date
      */
-    private String replaceNonDigit(String str) {
-        str = str.replaceAll("\\^", "9"); // ^^^^ -> 9999
-        str = str.replaceAll("-", "0");   // 19-- -> 1900
-        return str;
-    }
-
-    /**
-     * Clears the parser year attributes.
-     * Initializes attributes if they have not been initialized.
-     */
-    private void clearActualDates() {
-        dateStr = "";
-        yearBegin = "";
-        yearEnd = "";
+    private String replaceNonDigit(String dateStr) {
+        dateStr = dateStr.replaceAll("\\^", "9"); // ^^^^ -> 9999
+        dateStr = dateStr.replaceAll("-", "0");   // 19-- -> 1900
+        return dateStr;
     }
 
     /**
      * Parses date from string.
      *
-     * @param  str string to parse
-     * @return     date or null
+     * @param  dateStr string to parse
+     * @return         date or null
      */
-    private Date parseDateFromStr(String str) {
+    private Date parseDateFromStr(String dateStr) {
         try {
-            DatesParser p = new DatesParser(new DateLexer(new StringReader(str)));
+            DatesParser p = new DatesParser(new DateLexer(new StringReader(dateStr)));
             return p.dates();
         } catch (NullPointerException | RecognitionException | TokenStreamException e) {
             return null;

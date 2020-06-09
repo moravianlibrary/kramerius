@@ -11,19 +11,11 @@ import java.util.Date;
  */
 public class DateQuintet {
 
-    private Date date;
-    private String dateStr;
-    private String yearBegin;
-    private String yearEnd;
-    private String year;
-
-    public DateQuintet(Date d, String ds, String db, String de, String y) {
-        date = d;
-        dateStr = ds;
-        yearBegin = db;
-        yearEnd = de;
-        year = y;
-    }
+    private Date date = null;
+    private String dateStr = null;
+    private String yearBegin = null;
+    private String yearEnd = null;
+    private String year = null;
 
     public Date getDate() {
         return date;
@@ -43,5 +35,25 @@ public class DateQuintet {
 
     public String getYearEnd() {
         return yearEnd;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
+    }
+
+    public void setDateStr(String dateStr) {
+        this.dateStr = dateStr;
+    }
+
+    public void setYearBegin(String yearBegin) {
+        this.yearBegin = yearBegin;
+    }
+
+    public void setYearEnd(String yearEnd) {
+        this.yearEnd = yearEnd;
+    }
+
+    public void setYear(String year) {
+        this.year = year;
     }
 }
