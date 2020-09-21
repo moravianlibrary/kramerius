@@ -217,10 +217,10 @@ public class BiblioModsDateParser {
      * @param year        default year
      */
     private void setBeginAndEndYearsIfEmpty(DateQuintet dateQuintet, String year) {
-        if (dateQuintet.getYearBegin().isEmpty()) {
+        if (dateQuintet.getYearBegin() == null) {
             dateQuintet.setYearBegin(year);
         }
-        if (dateQuintet.getYearEnd().isEmpty()) {
+        if (dateQuintet.getYearEnd() == null) {
             dateQuintet.setYearEnd(year);
         }
     }
