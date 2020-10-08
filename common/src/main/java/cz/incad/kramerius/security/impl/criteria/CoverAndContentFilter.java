@@ -1,27 +1,24 @@
 package cz.incad.kramerius.security.impl.criteria;
 
-import cz.incad.kramerius.FedoraAccess;
 import cz.incad.kramerius.FedoraNamespaceContext;
+import cz.incad.kramerius.ObjectModelsPath;
 import cz.incad.kramerius.security.EvaluatingResult;
 import cz.incad.kramerius.security.RightCriterium;
 import cz.incad.kramerius.security.RightCriteriumException;
 import cz.incad.kramerius.security.RightCriteriumPriorityHint;
 import cz.incad.kramerius.security.SecuredActions;
 import cz.incad.kramerius.security.SpecialObjects;
-import cz.incad.kramerius.utils.XMLUtils;
 import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * CoverAndContentFilter
@@ -36,51 +33,69 @@ public class CoverAndContentFilter extends AbstractCriterium implements RightCri
     Logger LOGGER = java.util.logging.Logger.getLogger(CoverAndContentFilter.class.getName());
     private static XPathExpression modsTypeExpr = null;
     private static final List<String> allowedPageTypes = Arrays.asList(
-            "FrontCover", "TableOfContents", "FrontJacket", "TitlePage", "jacket"
+            "frontcover", "tableofcontents", "frontjacket", "titlepage", "jacket"
     );
+    private static final Map<String, List<String>> forbiddenTypeForModels = new HashMap<String, List<String>>() {{
+        put("titlepage", Collections.singletonList("periodical"));
+    }};
 
     @Override
     public EvaluatingResult evalute() throws RightCriteriumException {
         try {
-            FedoraAccess fedoraAccess = getEvaluateContext().getFedoraAccess();
-            getEvaluateContext().getSolrAccess();
-            String pid = getEvaluateContext().getRequestedPid();
-            if (!pid.equals(SpecialObjects.REPOSITORY.getPid())) {
-                if ("page".equals(fedoraAccess.getKrameriusModelName(pid))) {
-                    Document mods = XMLUtils.parseDocument(
-                            fedoraAccess.getDataStream(pid, "BIBLIO_MODS"), true);
-                    return checkTypeElement(mods);
-                } else {
-                    return EvaluatingResult.NOT_APPLICABLE;
-                }
-            } else {
+            String uuid = getEvaluateContext().getRequestedPid();
+            if (isSpecial(uuid))
                 return EvaluatingResult.TRUE;
-            }
-
+            else if (isPage(uuid))
+                return pageCanBeShown(uuid);
+            else
+                return EvaluatingResult.NOT_APPLICABLE;
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, e.getMessage(), e);
-            return EvaluatingResult.NOT_APPLICABLE;
-        } catch (SAXException e) {
-            LOGGER.log(Level.SEVERE, e.getMessage(), e);
-            return EvaluatingResult.NOT_APPLICABLE;
-        } catch (ParserConfigurationException e) {
             LOGGER.log(Level.SEVERE, e.getMessage(), e);
             return EvaluatingResult.NOT_APPLICABLE;
         }
     }
 
-    private EvaluatingResult checkTypeElement(Document mods) throws IOException {
+    private EvaluatingResult pageCanBeShown(String uuid) throws IOException {
+        String pageType = getPageType(uuid);
+        List<String> rootModels = getRootModels(uuid);
+        if (pageTypeIsAllowed(pageType) && typeIsAllowedForRoot(pageType, rootModels))
+            return EvaluatingResult.TRUE;
+        else
+            return EvaluatingResult.NOT_APPLICABLE;
+    }
+
+    private String getPageType(String uuid) throws IOException {
+        Document mods = getEvaluateContext().getFedoraAccess().getBiblioMods(uuid);
         try {
             if (modsTypeExpr == null) initModsTypeExpr();
-            String type = modsTypeExpr.evaluate(mods);
-            if (allowedPageTypes.contains(type)) {
-                return EvaluatingResult.TRUE;
-            } else {
-                return EvaluatingResult.NOT_APPLICABLE;
-            }
+            return modsTypeExpr.evaluate(mods).toLowerCase();
         } catch (XPathExpressionException e) {
             throw new IOException(e);
         }
+    }
+
+    private List<String> getRootModels(String uuid) throws IOException {
+        ObjectModelsPath[] modelsPaths = getEvaluateContext().getSolrAccess().getPathOfModels(uuid);
+        return Arrays.stream(modelsPaths).map(ObjectModelsPath::getRoot).collect(Collectors.toList());
+    }
+
+    private boolean pageTypeIsAllowed(String type) {
+        return allowedPageTypes.contains(type);
+    }
+
+    private boolean typeIsAllowedForRoot(String type, List<String> rootModels) {
+        // true if there is no forbidden root models for given page type
+        if (forbiddenTypeForModels.containsKey(type)) {
+            return Collections.disjoint(rootModels, forbiddenTypeForModels.get(type));
+        } else return true;
+    }
+
+    private boolean isSpecial(String uuid) {
+        return uuid.equals(SpecialObjects.REPOSITORY.getPid());
+    }
+
+    private boolean isPage(String uuid) throws IOException {
+        return "page".equals(getEvaluateContext().getFedoraAccess().getKrameriusModelName(uuid));
     }
 
     private void initModsTypeExpr() throws IOException {
@@ -107,5 +122,4 @@ public class CoverAndContentFilter extends AbstractCriterium implements RightCri
     public SecuredActions[] getApplicableActions() {
         return new SecuredActions[]{SecuredActions.READ};
     }
-
 }
