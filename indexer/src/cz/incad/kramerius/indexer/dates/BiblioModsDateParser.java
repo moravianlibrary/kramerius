@@ -167,20 +167,20 @@ public class BiblioModsDateParser {
         NamedNodeMap attributes = dateNode.getParentNode().getAttributes();
         String dateStr = dateNode.getTextContent();
 
-        if (attributes == null || attributes.getLength() == 0 ||
-                attributes.getNamedItem("point") == null) {
-            parseYearsFromDateStr(dateStr, dateQuintet);
-            dateQuintet.setDateStr(dateStr);
-        }
-        else {
-            Node point = attributes.getNamedItem("point");
-            if (point == null) return;
+        boolean hasAttributes = attributes != null && attributes.getLength() != 0;
+        Node point = hasAttributes ? attributes.getNamedItem("point") : null;
 
+        if (point != null) {
             if ("start".equals(point.getNodeValue())) {
+                dateStr = dateStr.replaceAll("u", "0");
                 dateQuintet.setYearBegin(dateStr);
             } else {
+                dateStr = dateStr.replaceAll("u", "9");
                 dateQuintet.setYearEnd(dateStr);
             }
+        } else {
+            parseYearsFromDateStr(dateStr, dateQuintet);
+            dateQuintet.setDateStr(dateStr);
         }
     }
 
