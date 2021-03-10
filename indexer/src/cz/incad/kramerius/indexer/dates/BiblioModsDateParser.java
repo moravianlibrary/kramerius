@@ -48,11 +48,11 @@ public class BiblioModsDateParser {
     /* Regular expressions for parsing years from text */
     private List<Pattern> yearRegexPatterns;
     private final List<String> yearRegexStrs = Arrays.asList(
-            "(?<![0-9])[0-9]{3}(?![0-9])",   // 800, 999
-            "(?<![0-9])[0-9]{4}(?![0-9])",   // 1941, 1945
-            "(?<![0-9])[0-9]{3}-(?![0-9])",  // 194-, 199-
-            "(?<![0-9])[0-9]{2}--(?![0-9])", // 18--, 19--
-            "(?<![0-9])[\\^]{4}(?![0-9])"    // ^^^^
+            "(?<![0-9])[8-9][0-9]{2}(?![0-9])", // 800, 999
+            "(?<![0-9])[0-9]{4}(?![0-9])",      // 1941, 1945
+            "(?<![0-9])[0-9]{3}-(?![0-9])",     // 194-, 199-
+            "(?<![0-9])[0-9]{2}--(?![0-9])",    // 18--, 19--
+            "(?<![0-9])[\\^]{4}(?![0-9])"       // ^^^^
     );
 
     public BiblioModsDateParser() {
@@ -128,7 +128,7 @@ public class BiblioModsDateParser {
         for (Node dateNode : dateNodes) {
             parseNodeAndFillDateQuintet(dateNode, dateQuintet);
         }
-        setBeginAndEndYearsIfEmpty(dateQuintet, dateQuintet.getYear());
+        setGenYearAndDateFromYearEnd(dateQuintet);
 
         // save prepared quintet to the date cache
         dateCache.put(uuid, dateQuintet);
@@ -167,20 +167,20 @@ public class BiblioModsDateParser {
         NamedNodeMap attributes = dateNode.getParentNode().getAttributes();
         String dateStr = dateNode.getTextContent();
 
-        if (attributes == null || attributes.getLength() == 0 ||
-                attributes.getNamedItem("point") == null) {
-            parseYearsFromDateStr(dateStr, dateQuintet);
-            dateQuintet.setDateStr(dateStr);
-        }
-        else {
-            Node point = attributes.getNamedItem("point");
-            if (point == null) return;
+        boolean hasAttributes = attributes != null && attributes.getLength() != 0;
+        Node point = hasAttributes ? attributes.getNamedItem("point") : null;
 
+        if (point != null) {
             if ("start".equals(point.getNodeValue())) {
+                dateStr = dateStr.replaceAll("u", "0");
                 dateQuintet.setYearBegin(dateStr);
             } else {
+                dateStr = dateStr.replaceAll("u", "9");
                 dateQuintet.setYearEnd(dateStr);
             }
+        } else {
+            dateQuintet.setDateStr(dateStr);
+            parseBeginAndEndYearsFromDateStr(dateStr, dateQuintet);
         }
     }
 
@@ -192,37 +192,37 @@ public class BiblioModsDateParser {
      * @param dateStr     string to parse
      * @param dateQuintet auxiliary structure to fill
      */
-    private void parseYearsFromDateStr(String dateStr, DateQuintet dateQuintet) {
+    private void parseBeginAndEndYearsFromDateStr(String dateStr, DateQuintet dateQuintet) {
         // apply date patterns and get all possible years from dateStr
         List<String> yearsStr = getAllMatchedYears(dateStr);
         if (yearsStr.size() > 1) {
             // several years have been found -> setup begin and end dates
             List<Integer> yearsInt = yearsStr.stream().map(Integer::valueOf).collect(Collectors.toList());
-            dateQuintet.setYearBegin(String.valueOf(Collections.min(yearsInt)));
-            String yearEnd = String.valueOf(Collections.max(yearsInt));
-            dateQuintet.setYearEnd(yearEnd);
-            dateQuintet.setYear(yearEnd);
+            setYearBeginIfEmpty(dateQuintet, String.valueOf(Collections.min(yearsInt)));
+            setYearEndIfEmpty(dateQuintet, String.valueOf(Collections.max(yearsInt)));
         } else if (!yearsStr.isEmpty()) {
-            dateQuintet.setYear(yearsStr.get(0));
+            setYearBeginIfEmpty(dateQuintet, yearsStr.get(0));
+            setYearEndIfEmpty(dateQuintet, yearsStr.get(0));
         }
-        String year = dateQuintet.getYear();
-        dateQuintet.setDate(parseDateOrSetDefault(dateStr, year));
+    }
+
+    private void setYearBeginIfEmpty(DateQuintet dateQuintet, String yearStr) {
+        if (dateQuintet.getYearBegin() == null) dateQuintet.setYearBegin(yearStr);
+    }
+
+    private void setYearEndIfEmpty(DateQuintet dateQuintet, String yearStr) {
+        if (dateQuintet.getYearEnd() == null) dateQuintet.setYearEnd(yearStr);
     }
 
     /**
-     * If the years of the beginning or end of publication are empty,
-     * fills them with the general year of publication.
+     * Fills the general year and date of publication by the year of the end of publication.
      *
      * @param dateQuintet auxiliary structure to check and fill
-     * @param year        default year
      */
-    private void setBeginAndEndYearsIfEmpty(DateQuintet dateQuintet, String year) {
-        if (dateQuintet.getYearBegin() == null) {
-            dateQuintet.setYearBegin(year);
-        }
-        if (dateQuintet.getYearEnd() == null) {
-            dateQuintet.setYearEnd(year);
-        }
+    private void setGenYearAndDateFromYearEnd(DateQuintet dateQuintet) {
+        String yearEnd = dateQuintet.getYearEnd();
+        dateQuintet.setYear(yearEnd);
+        dateQuintet.setDate(parseDateOrSetDefault(dateQuintet.getDateStr(), yearEnd));
     }
 
     /**
