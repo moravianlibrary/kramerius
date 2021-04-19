@@ -6,6 +6,10 @@ import cz.incad.kramerius.impl.FedoraAccessImpl;
 import cz.incad.kramerius.indexer.coordinates.ParsingCoordinates;
 import cz.incad.kramerius.indexer.dates.BiblioModsDateParser;
 import cz.incad.kramerius.indexer.dates.DateQuintet;
+import cz.incad.kramerius.indexer.dnnt.DnntSingleton;
+import cz.incad.kramerius.security.impl.criteria.mw.DateLexer;
+import cz.incad.kramerius.security.impl.criteria.mw.DatesParser;
+import cz.incad.kramerius.utils.StringUtils;
 import cz.incad.kramerius.utils.conf.KConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -60,6 +64,10 @@ public class ExtendedFields {
     PDDocument pdDoc = null;
     String pdfPid = "";
 
+    // dnnt flag
+    private String dnnt;
+    private List<String> dnntLabels;
+
     // geo coordinates range
     private List<String> coordinates;
 
@@ -98,6 +106,25 @@ public class ExtendedFields {
         setDate(biblioMods);
         // coordinates
         this.coordinates = ParsingCoordinates.processBibloModsCoordinates(biblioMods, this.factory);
+        // dnnt
+
+        List<String> dnntLabels = new ArrayList<>();
+        for(String pidPath: pid_paths) {
+            String[] path = pidPath.split("/");
+            for (String p : path) {
+                String dnnt = DnntSingleton.getInstance().dnnt(p, fo.fa);
+                if (dnnt != null) {
+                    if (dnnt.equals("true")) {
+                        this.dnnt = dnnt;
+                        dnntLabels.addAll(DnntSingleton.getInstance().dnntLabels(p, fo.fa));
+                    }
+                }
+            }
+        }
+
+        if (this.dnnt != null && this.dnnt.equals("true")) {
+            this.dnntLabels = dnntLabels;
+        }
     }
 
     public void setPDFDocument(String pid) throws Exception {
@@ -246,6 +273,19 @@ public class ExtendedFields {
             sb.append("<field name=\"datum_end\">").append(datum_end).append("</field>");
         }
 
+
+        if (this.dnnt != null && StringUtils.isAnyString(this.dnnt)) {
+            sb.append("<field name=\"dnnt\">").append(dnnt).append("</field>");
+
+            if (this.dnntLabels != null) {
+                dnntLabels.stream().forEach(label-> {
+                    sb.append("<field name=\"dnnt-labels\">").append(label).append("</field>");
+                });
+            }
+
+        }
+
+        // dnnt labels
 
         if (this.coordinates != null) {
             coordinates.stream().forEach((loc)->{

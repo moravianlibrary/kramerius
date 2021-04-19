@@ -1,3 +1,4 @@
+
 apply plugin: 'war'
 
 description "Admin web application"
@@ -41,7 +42,11 @@ dependencies {
     compile project(':rest')
     compile project(':mw-process')
     compile project(':authfilters')
+    compile project(':dnntflag')
+
     compile project(':solr-migration')
+
+    compile project(':nkp-logs')
 
     compile 'javax.servlet:jstl:1.1.2'
     compile 'taglibs:standard:1.1.2'

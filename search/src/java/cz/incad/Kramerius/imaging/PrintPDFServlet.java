@@ -15,6 +15,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.xpath.XPathExpressionException;
 
+import cz.incad.kramerius.statistics.accesslogs.AggregatedAccessLogs;
 import org.json.JSONException;
 
 import com.google.inject.Inject;
@@ -117,8 +118,9 @@ public class PrintPDFServlet extends GuiceServlet {
     Provider<User> userProvider;
 
     @Inject
-    StatisticsAccessLog statisticsAccessLog;
-
+    AggregatedAccessLogs statisticsAccessLog;
+    
+    
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -224,7 +226,7 @@ public class PrintPDFServlet extends GuiceServlet {
     private boolean canBeRead(String pid) throws IOException {
         ObjectPidsPath[] paths = solrAccess.getPath(pid);
         for (ObjectPidsPath pth : paths) {
-            if (this.actionAllowed.isActionAllowed(userProvider.get(), SecuredActions.READ.getFormalName(), pid, null, pth)) {
+            if (this.actionAllowed.isActionAllowed(userProvider.get(), SecuredActions.READ.getFormalName(), pid, null, pth).flag()) {
                 return true;
             }
         }
@@ -234,7 +236,7 @@ public class PrintPDFServlet extends GuiceServlet {
     private boolean canBeRenderedAsPDF(String pid) throws IOException {
         ObjectPidsPath[] paths = solrAccess.getPath(pid);
         for (ObjectPidsPath pth : paths) {
-            if (this.actionAllowed.isActionAllowed(userProvider.get(), SecuredActions.PDF_RESOURCE.getFormalName(), pid, null, pth)) {
+            if (this.actionAllowed.isActionAllowed(userProvider.get(), SecuredActions.PDF_RESOURCE.getFormalName(), pid, null, pth).flag()) {
                 return true;
             }
         }
