@@ -138,14 +138,7 @@ public class PrintPDFServlet extends GuiceServlet {
                     ServletOutputStream sos = resp.getOutputStream();
                     PdfWriter.getInstance(document, sos);
                     document.open();
-
-                    try {
-                        this.statisticsAccessLog.reportAccess(pid, FedoraUtils.IMG_FULL_STREAM, ReportedAction.PRINT.name());
-                    } catch (Exception e) {
-                        LOGGER.severe("cannot write statistic records");
-                        LOGGER.log(Level.SEVERE, e.getMessage(),e);
-                    }
-
+                    reportAccess(pid);
                     File renderedFile = File.createTempFile("local", "print");
                     filesToDelete.add(renderedFile);
                     FileOutputStream fos = new FileOutputStream(renderedFile);
@@ -184,14 +177,7 @@ public class PrintPDFServlet extends GuiceServlet {
                     for (int i = 0; i < pds.length; i++) {
                         File nfile = File.createTempFile("local", "print");
                         filesToDelete.add(nfile);
-                
-                        try {
-                            this.statisticsAccessLog.reportAccess(pds[i], FedoraUtils.IMG_FULL_STREAM, ReportedAction.PRINT.name());
-                        } catch (Exception e) {
-                            LOGGER.severe("cannot write statistic records");
-                            LOGGER.log(Level.SEVERE, e.getMessage(),e);
-                        }
-
+                        reportAccess(pds[i]);
                         FileOutputStream fos = new FileOutputStream(nfile);
                         ImageOP.valueOf(imgop).imageData(this.fedoraAccess, pds[i], req, fos);
                         Image image = Image.getInstance(nfile.toURI().toURL());
@@ -220,6 +206,14 @@ public class PrintPDFServlet extends GuiceServlet {
                     file.delete();
                 }
             }
+        }
+    }
+
+    private void reportAccess(String pid) {
+        try {
+            this.statisticsAccessLog.reportAccess(pid, FedoraUtils.IMG_FULL_STREAM, ReportedAction.PRINT.name());
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Can't write statistic records for " + pid, e);
         }
     }
 
